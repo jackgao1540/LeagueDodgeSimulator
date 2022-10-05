@@ -302,7 +302,12 @@ int main()
         }
 
         // UPDATE
+        int curScore = SCORE;
         movePlayerProjectiles(t);
+        if(SCORE > curScore) {
+            // if the player hit an enemy, refund the CD of the shot
+            remainingShotCD = 0;
+        }
         moveEnemyProjectiles(playerPos, t);
         moveEnemies(playerPos, t);
 
