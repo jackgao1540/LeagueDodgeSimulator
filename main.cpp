@@ -19,6 +19,10 @@ float max(float a, float b) {
     return a > b ? a : b;
 }
 
+float max(float a, float b) {
+    return a < b ? a : b;
+}
+
 struct PlayerProjectile {
     Vector2f pos;
     Vector2f velocity;
@@ -274,6 +278,9 @@ int main()
         playerPos += v*SPEED*t;
         player.setPosition(playerPos);
 
+        // make palyer not move out of screen
+        playerPos.x = min((float)WIDTH, max(0, playerPos.x));
+        playerPos.y = min((float)HEIGHT, max(0, playerPos.y));
         // Check if player pressed projectile shoot button
         if (Keyboard::isKeyPressed(Keyboard::Key::Q)) {
             // shoot
