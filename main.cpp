@@ -7,6 +7,7 @@
 const float SPEED = 400.0, DEFAULT_PLAYER_RADIUS = 15, DEFAULT_ENEMY_RADIUS = 30, UNIT_SIZE = 20.0, SHOT_CD = 0.420, ENEMY_SHOT_CD = 0.8, ENEMY_CD = 1, ATK_RANGE = 400;
 const float PLAYER_PROJECTILE_SPEED = 800, ENEMY_PROJECTILE_SPEED = 700, ENEMY_SPEED = 420;
 const int WIDTH = 1600, HEIGHT = 900;
+const float FLASH_CD = 15, FLASH_LEN = 250;
 
 int SCORE = 0;
 
@@ -19,7 +20,7 @@ float max(float a, float b) {
     return a > b ? a : b;
 }
 
-float max(float a, float b) {
+float min(float a, float b) {
     return a < b ? a : b;
 }
 
@@ -50,6 +51,7 @@ vector <Enemy> enemies;
 float remainingShotCD = 0.0;
 float enemyShotCD = 0.0;
 float enemyCD = 0.0;
+float flashCD = 0.0;
 
 float len(Vector2f v) {
     return sqrt(v.x*v.x + v.y*v.y);
@@ -143,7 +145,7 @@ void movePlayerProjectiles(float t) {
             if(len(enemies[j].pos - playerProjectiles[i].pos) <= DEFAULT_PLAYER_RADIUS + UNIT_SIZE) {
                 // colliding
                 enemies.erase(enemies.begin() + j);
-                SCORE++;
+                SCORE = SCORE + 2;
                 playerProjectiles.erase(playerProjectiles.begin() + i);
                 break; // each bullet can only hit an enemy once
             }
@@ -231,6 +233,7 @@ int main()
         remainingShotCD = max(0.0, remainingShotCD - t);
         enemyShotCD = max(0.0, enemyShotCD - t);
         enemyCD = max(0.0, enemyCD - t);
+        flashCD = max(0.0, flashCD - t);
         float f = 1.f / t;
         Event event;
         while (window.pollEvent(event)){
@@ -257,8 +260,7 @@ int main()
         //     v.y-=1.0f;
         // }
         if(Mouse::isButtonPressed(Mouse::Right)) {
-            mousePos = (Vector2f)Mouse::getPosition(window);
-            mouseMovePos = mousePos;
+            mouseMovePos = (Vector2f)Mouse::getPosition(window);
         }
 
         mousePos = (Vector2f)Mouse::getPosition(window);
@@ -268,6 +270,30 @@ int main()
             mouseMovePos = playerPos;
             v.x = v.y = 0;
         }
+
+        // FLASH
+        if(Keyboard::isKeyPressed(Keyboard::Key::F)) {
+            if(flashCD == 0.0) {
+                flashCD = FLASH_CD;
+                Vector2f v = mousePos - playerPos;
+                if(len(v) < FLASH_LEN) {
+                    if(mouseMovePos.x == playerPos.x && mouseMovePos.y == playerPos.y) {
+                        mouseMovePos = mousePos;
+                    }
+                    playerPos = mousePos;
+                } else {
+                    // scale it to FLASH_LEN
+                    v /= len(v);
+                    v *= FLASH_LEN;
+                    Vector2f newPos = playerPos + v;
+                    if(mouseMovePos.x == playerPos.x && mouseMovePos.y == playerPos.y) {
+                        mouseMovePos = newPos;
+                    }
+                    playerPos = newPos;
+                }
+            }
+        }
+
         if(playerPos.x != mouseMovePos.x || playerPos.y != mouseMovePos.y) {
             v = mouseMovePos - playerPos;
             v/=sqrt(v.x*v.x+v.y*v.y);
@@ -306,7 +332,7 @@ int main()
         movePlayerProjectiles(t);
         if(SCORE > curScore) {
             // if the player hit an enemy, refund the CD of the shot
-            remainingShotCD = 0;
+            remainingShotCD = 0.0;
         }
         moveEnemyProjectiles(playerPos, t);
         moveEnemies(playerPos, t);
